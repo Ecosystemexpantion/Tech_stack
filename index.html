@@ -6,7 +6,8 @@
 <title>Tech Stack Swipe File — EEM26</title>
 <meta name="description" content="The exact system EEM26 students used to make ₦200K–₦500K monthly. Get instant access now.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;600;700;900&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://payhip.com/payhip.js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -225,9 +226,37 @@ footer{background:#000;text-align:center;padding:16px;font-size:.65rem;color:#33
 .fs-alert.show{display:block;animation:alertPop .3s ease}
 @keyframes alertPop{0%{transform:scale(.92);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* EMAIL MODAL */
+.pay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+.pay-overlay.open{opacity:1;pointer-events:all}
+.pay-modal{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--green);border-radius:16px;padding:32px 24px;max-width:380px;width:100%;text-align:center;position:relative;transform:translateY(20px);transition:transform .25s}
+.pay-overlay.open .pay-modal{transform:none}
+.pay-modal h3{font-family:'Bebas Neue',cursive;font-size:1.8rem;color:var(--text);margin-bottom:6px}
+.pay-modal p{font-size:.8rem;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.pay-modal input[type=email]{width:100%;background:#0d2010;border:1px solid var(--border);color:var(--text);font-family:'Figtree',sans-serif;font-size:.9rem;padding:13px 16px;border-radius:8px;outline:none;margin-bottom:12px;transition:border-color .2s;box-sizing:border-box}
+.pay-modal input[type=email]:focus{border-color:var(--green)}
+.pay-modal input[type=email]::placeholder{color:var(--muted)}
+.pay-modal-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));color:#000;font-weight:900;font-size:.95rem;padding:14px;border-radius:8px;border:none;cursor:pointer;font-family:'Figtree',sans-serif;transition:all .2s}
+.pay-modal-btn:hover{box-shadow:0 6px 20px rgba(0,200,83,.4)}
+.pay-modal-btn:disabled{opacity:.6;cursor:not-allowed}
+.pay-modal-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;line-height:1;padding:2px 6px}
+.pay-modal-note{font-size:.68rem;color:var(--muted);margin-top:10px}
 </style>
 </head>
 <body>
+
+<!-- PAYSTACK EMAIL MODAL -->
+<div class="pay-overlay" id="payOverlay">
+  <div class="pay-modal">
+    <button class="pay-modal-x" id="payModalClose">✕</button>
+    <h3>Almost There!</h3>
+    <p>Enter your email below — we'll send your <strong style="color:var(--green)">instant access link</strong> here right after payment.</p>
+    <input type="email" id="buyerEmail" placeholder="your@email.com" autocomplete="email">
+    <button class="pay-modal-btn" id="payNowBtn">🔒 Pay ₦39,820 Securely</button>
+    <div class="pay-modal-note">🔒 Secured by Paystack &nbsp;·&nbsp; ✅ Instant access after payment</div>
+  </div>
+</div>
 
 <a href="#" class="float-btn buy-trigger">⬇️ Download Now — ₦39,820</a>
 
@@ -645,19 +674,6 @@ const tick = setInterval(() => {
   if(topSecs) topSecs.textContent = s;
 }, 1000);
 
-// ── AFFILIATE TRACKING ──
-const BASE_URL = "https://payhip.com/b/xeqSM";
-function getParam(n){ return new URLSearchParams(window.location.search).get(n); }
-function setLinks(){
-  const af = getParam('af');
-  const url = af ? BASE_URL + '/' + encodeURIComponent(af) : BASE_URL;
-  ['hero-dl','final-dl','float-dl','nav-dl','proof-dl'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.href = url;
-  });
-}
-setLinks();
-
 // ── SCROLL REVEAL ──
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => {
@@ -666,16 +682,83 @@ const obs = new IntersectionObserver(entries => {
 }, { threshold: 0.07 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-// ── PAYHIP POPUP ──
+// ── PAYSTACK + EMAILJS CHECKOUT ──
+emailjs.init('P6vjGqbInRNLni8GS');
+
+const payOverlay    = document.getElementById('payOverlay');
+const buyerEmailEl  = document.getElementById('buyerEmail');
+const payNowBtn     = document.getElementById('payNowBtn');
+const payModalClose = document.getElementById('payModalClose');
+
+// Open modal on any buy-trigger click
 document.querySelectorAll('.buy-trigger').forEach(el => {
   el.addEventListener('click', function(e) {
     e.preventDefault();
-    if(window.Payhip && Payhip.Checkout) {
-      Payhip.Checkout.open({ product: 'xeqSM' });
-    } else {
-      window.open('https://payhip.com/b/xeqSM', '_blank');
+    payOverlay.classList.add('open');
+    setTimeout(() => buyerEmailEl.focus(), 250);
+  });
+});
+
+// Close modal
+payModalClose.addEventListener('click', () => payOverlay.classList.remove('open'));
+payOverlay.addEventListener('click', function(e) {
+  if (e.target === payOverlay) payOverlay.classList.remove('open');
+});
+
+// Allow Enter key to submit
+buyerEmailEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') payNowBtn.click();
+});
+
+// Pay button
+payNowBtn.addEventListener('click', function() {
+  const email = buyerEmailEl.value.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  if (!emailOk) {
+    buyerEmailEl.style.borderColor = 'var(--red)';
+    buyerEmailEl.focus();
+    setTimeout(() => { buyerEmailEl.style.borderColor = ''; }, 1800);
+    return;
+  }
+
+  payNowBtn.disabled = true;
+  payNowBtn.textContent = 'Opening Secure Checkout...';
+
+  var handler = PaystackPop.setup({
+    key: 'pk_live_d4b401792b62d34e6664a0180eb4e0eb036ebe16',
+    email: email,
+    amount: 3982000,
+    currency: 'NGN',
+    ref: 'EEM26_' + Date.now() + '_' + Math.floor(Math.random() * 1e6),
+    label: 'EEM26 Tech Stack',
+    metadata: {
+      custom_fields: [{
+        display_name: 'Product',
+        variable_name: 'product',
+        value: 'EEM26 Tech Stack'
+      }]
+    },
+    callback: function(response) {
+      payOverlay.classList.remove('open');
+      // Send access email via EmailJS then redirect
+      emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+        to_email:     email,
+        user_email:   email,
+        product_name: 'EEM26 Tech Stack',
+        product_link: 'https://ecosystemexpantion.github.io/Product_page/',
+        payment_ref:  response.reference
+      }).finally(function() {
+        window.location.href = 'https://ecosystemexpantion.github.io/Product_page/';
+      });
+    },
+    onClose: function() {
+      payNowBtn.disabled = false;
+      payNowBtn.textContent = '🔒 Pay ₦39,820 Securely';
     }
   });
+
+  handler.openIframe();
 });
 </script>
 </body>
