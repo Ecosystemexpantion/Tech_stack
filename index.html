@@ -6,7 +6,6 @@
 <title>Tech Stack Swipe File — EEM26</title>
 <meta name="description" content="The exact system EEM26 students used to make ₦200K–₦500K monthly. Get instant access now.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;600;700;900&display=swap" rel="stylesheet">
-<script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <style>
@@ -245,6 +244,13 @@ footer{background:#000;text-align:center;padding:16px;font-size:.65rem;color:#33
 </style>
 </head>
 <body>
+
+<!-- PAYSTACK RETURN: PROCESSING OVERLAY -->
+<div id="ps-done" style="display:none;position:fixed;inset:0;background:var(--deep);z-index:9999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px">
+  <div style="font-size:3.5rem;margin-bottom:16px">✅</div>
+  <h2 style="font-family:'Bebas Neue',cursive;font-size:2.4rem;color:var(--green);margin-bottom:10px">Payment Confirmed!</h2>
+  <p style="color:var(--muted);font-size:.9rem;line-height:1.6">Sending your access link...<br>You'll be redirected in a moment.</p>
+</div>
 
 <!-- PAYSTACK EMAIL MODAL -->
 <div class="pay-overlay" id="payOverlay">
@@ -682,15 +688,50 @@ const obs = new IntersectionObserver(entries => {
 }, { threshold: 0.07 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-// ── PAYSTACK + EMAILJS CHECKOUT ──
+// ── PAYSTACK REDIRECT CHECKOUT + EMAILJS ──
 emailjs.init('P6vjGqbInRNLni8GS');
 
+// ── Handle return from Paystack ──
+// Paystack appends ?trxref=xxx&reference=xxx to the callback_url after payment.
+(function handlePaystackReturn() {
+  const qs = new URLSearchParams(window.location.search);
+  const ref = qs.get('trxref') || qs.get('reference');
+  if (!ref) return;
+
+  // Show full-screen confirmation overlay immediately
+  var done = document.getElementById('ps-done');
+  if (done) { done.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+
+  // Clean the URL so reloading doesn't re-trigger this
+  history.replaceState({}, '', window.location.pathname);
+
+  var email = localStorage.getItem('ps_buyer_email') || '';
+  localStorage.removeItem('ps_buyer_email');
+  localStorage.removeItem('ps_ref');
+
+  function goToProduct() {
+    window.location.replace('https://ecosystemexpantion.github.io/Product_page/');
+  }
+
+  if (email) {
+    emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+      to_email:     email,
+      user_email:   email,
+      product_name: 'EEM26 Tech Stack',
+      product_link: 'https://ecosystemexpantion.github.io/Product_page/',
+      payment_ref:  ref
+    }).finally(goToProduct);
+  } else {
+    goToProduct();
+  }
+})();
+
+// ── Modal controls ──
 const payOverlay    = document.getElementById('payOverlay');
 const buyerEmailEl  = document.getElementById('buyerEmail');
 const payNowBtn     = document.getElementById('payNowBtn');
 const payModalClose = document.getElementById('payModalClose');
 
-// Open modal on any buy-trigger click
 document.querySelectorAll('.buy-trigger').forEach(el => {
   el.addEventListener('click', function(e) {
     e.preventDefault();
@@ -699,18 +740,16 @@ document.querySelectorAll('.buy-trigger').forEach(el => {
   });
 });
 
-// Close modal
 payModalClose.addEventListener('click', () => payOverlay.classList.remove('open'));
 payOverlay.addEventListener('click', function(e) {
   if (e.target === payOverlay) payOverlay.classList.remove('open');
 });
 
-// Allow Enter key to submit
 buyerEmailEl.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') payNowBtn.click();
 });
 
-// Pay button
+// ── Pay button → redirect to Paystack hosted checkout ──
 payNowBtn.addEventListener('click', function() {
   const email = buyerEmailEl.value.trim();
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -723,42 +762,26 @@ payNowBtn.addEventListener('click', function() {
   }
 
   payNowBtn.disabled = true;
-  payNowBtn.textContent = 'Opening Secure Checkout...';
+  payNowBtn.textContent = 'Redirecting to checkout...';
 
-  var handler = PaystackPop.setup({
-    key: 'pk_live_d4b401792b62d34e6664a0180eb4e0eb036ebe16',
-    email: email,
-    amount: 3982000,
-    currency: 'NGN',
-    ref: 'EEM26_' + Date.now() + '_' + Math.floor(Math.random() * 1e6),
-    label: 'EEM26 Tech Stack',
-    metadata: {
-      custom_fields: [{
-        display_name: 'Product',
-        variable_name: 'product',
-        value: 'EEM26 Tech Stack'
-      }]
-    },
-    callback: function(response) {
-      payOverlay.classList.remove('open');
-      // Send access email via EmailJS then redirect
-      emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
-        to_email:     email,
-        user_email:   email,
-        product_name: 'EEM26 Tech Stack',
-        product_link: 'https://ecosystemexpantion.github.io/Product_page/',
-        payment_ref:  response.reference
-      }).finally(function() {
-        window.location.href = 'https://ecosystemexpantion.github.io/Product_page/';
-      });
-    },
-    onClose: function() {
-      payNowBtn.disabled = false;
-      payNowBtn.textContent = '🔒 Pay ₦39,820 Securely';
-    }
+  const ref = 'EEM26_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+
+  // Persist email so it survives the Paystack redirect round-trip
+  localStorage.setItem('ps_buyer_email', email);
+  localStorage.setItem('ps_ref', ref);
+
+  // Paystack hosted checkout — uses the public key only, no secret key needed
+  const params = new URLSearchParams({
+    key:          'pk_live_d4b401792b62d34e6664a0180eb4e0eb036ebe16',
+    email:        email,
+    amount:       '3982000',
+    currency:     'NGN',
+    ref:          ref,
+    label:        'EEM26 Tech Stack',
+    callback_url: 'https://ecosystemexpantion.github.io/Tech_stack/'
   });
 
-  handler.openIframe();
+  window.location.href = 'https://checkout.paystack.com/?' + params.toString();
 });
 </script>
 </body>
