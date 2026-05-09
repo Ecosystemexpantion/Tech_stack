@@ -192,37 +192,37 @@ footer{background:#000;text-align:center;padding:16px;font-size:.65rem;color:#33
 
 /* FLOATING SLOT TRACKER */
 .float-slot{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  z-index:199;width:calc(100% - 32px);max-width:360px;
+  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  z-index:199;width:calc(100% - 32px);max-width:340px;
   background:rgba(5,15,8,.96);
   border:1px solid rgba(0,200,83,.25);
   border-top:2px solid var(--green);
-  border-radius:12px;
-  padding:10px 14px 9px;
+  border-radius:10px;
+  padding:6px 10px 5px;
   backdrop-filter:blur(20px);
-  box-shadow:0 6px 30px rgba(0,0,0,.55),0 0 20px rgba(0,200,83,.08);
+  box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 14px rgba(0,200,83,.07);
   transition:background .3s, border-color .3s, box-shadow .3s;
 }
 .float-slot.flash{
   background:rgba(255,61,61,.18) !important;
   border-color:var(--red) !important;
-  box-shadow:0 0 0 4px rgba(255,61,61,.3), 0 6px 30px rgba(255,61,61,.3) !important;
+  box-shadow:0 0 0 3px rgba(255,61,61,.3), 0 4px 20px rgba(255,61,61,.3) !important;
   animation:shake .35s ease;
 }
 @keyframes shake{0%,100%{transform:translateX(-50%)}15%,45%,75%{transform:translateX(calc(-50% - 7px))}30%,60%,90%{transform:translateX(calc(-50% + 7px))}}
-.fs-label{font-size:.52rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;text-align:center}
-.fs-dots{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-bottom:7px}
-.fs-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;border:1.5px solid;font-size:.45rem;transition:all .4s}
+.fs-label{font-size:.46rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px;text-align:center}
+.fs-dots{display:flex;justify-content:center;gap:3px;flex-wrap:wrap;margin-bottom:4px}
+.fs-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;border:1.5px solid;font-size:.38rem;transition:all .4s}
 .fs-dot.taken{background:rgba(255,61,61,.15);border-color:var(--red);color:var(--red)}
 .fs-dot.taken.just-taken{animation:takenPop .5s ease}
 @keyframes takenPop{0%{transform:scale(1.6);background:rgba(255,61,61,.5)}100%{transform:scale(1)}}
-.fs-dot.you{background:rgba(0,200,83,.2);border-color:var(--green);color:var(--green);font-size:.42rem;animation:youPulse 1.8s infinite}
+.fs-dot.you{background:rgba(0,200,83,.2);border-color:var(--green);color:var(--green);font-size:.34rem;animation:youPulse 1.8s infinite}
 .fs-dot.open{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.18)}
-@keyframes youPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,200,83,.5)}50%{box-shadow:0 0 0 5px rgba(0,200,83,0)}}
-.fs-caption{font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+@keyframes youPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,200,83,.5)}50%{box-shadow:0 0 0 4px rgba(0,200,83,0)}}
+.fs-caption{font-size:.56rem;color:var(--muted);text-align:center;line-height:1.3}
 .fs-caption strong{color:var(--red)}
 .fs-caption .you-note{color:var(--green);font-weight:700}
-.fs-alert{font-size:.7rem;background:rgba(255,61,61,.15);border:1px solid rgba(255,61,61,.4);border-radius:5px;padding:7px 12px;margin-top:7px;color:var(--red);font-weight:900;text-align:center;display:none;letter-spacing:.3px}
+.fs-alert{font-size:.62rem;background:rgba(255,61,61,.15);border:1px solid rgba(255,61,61,.4);border-radius:5px;padding:4px 10px;margin-top:5px;color:var(--red);font-weight:900;text-align:center;display:none;letter-spacing:.3px}
 .fs-alert.show{display:block;animation:alertPop .3s ease}
 @keyframes alertPop{0%{transform:scale(.92);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -251,7 +251,7 @@ footer{background:#000;text-align:center;padding:16px;font-size:.65rem;color:#33
   <div class="pay-modal">
     <button class="pay-modal-x" id="payModalClose">✕</button>
     <h3>Almost There!</h3>
-    <p>Enter your email below — we'll send your <strong style="color:var(--green)">instant access link</strong> here right after payment.</p>
+    <p>This is the last decision you make manually. After this, your AI handles everything. Enter your email — your access arrives instantly.</p>
     <input type="email" id="buyerEmail" placeholder="your@email.com" autocomplete="email">
     <button class="pay-modal-btn" id="payNowBtn">🔒 Pay ₦39,820 Securely</button>
     <div class="pay-modal-note">🔒 Secured by Paystack &nbsp;·&nbsp; ✅ Instant access after payment</div>
