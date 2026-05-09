@@ -6,6 +6,21 @@
 <title>Tech Stack Swipe File — EEM26</title>
 <meta name="description" content="The exact system EEM26 students used to make ₦200K–₦500K monthly. Get instant access now.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script>
+// Override document.createElement so every iframe gets allow="clipboard-read; clipboard-write"
+// BEFORE Paystack assigns src. The browser locks Permissions Policy at navigation time,
+// so this must happen before src is set — MutationObserver fires too late.
+(function(){
+  var _ce = document.createElement.bind(document);
+  document.createElement = function(tag){
+    var el = _ce(tag);
+    if(typeof tag === 'string' && tag.toLowerCase() === 'iframe'){
+      el.setAttribute('allow', 'clipboard-read; clipboard-write');
+    }
+    return el;
+  };
+})();
+</script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
@@ -684,26 +699,6 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
 // ── PAYSTACK POPUP + EMAILJS CHECKOUT ──
 emailjs.init('P6vjGqbInRNLni8GS');
-
-// Fix "Copy failed!" on Android Chrome: clipboard API is blocked inside iframes by default.
-// This observer patches allow="clipboard-read; clipboard-write" onto Paystack's iframe
-// the instant it is added to the DOM, before it finishes loading.
-var _clipObs = new MutationObserver(function(mutations) {
-  mutations.forEach(function(m) {
-    m.addedNodes.forEach(function(node) {
-      if (node.nodeType !== 1) return;
-      var frames = node.tagName === 'IFRAME' ? [node]
-                 : Array.from(node.querySelectorAll ? node.querySelectorAll('iframe') : []);
-      frames.forEach(function(f) {
-        if ((f.src && f.src.includes('paystack')) ||
-            (f.name && f.name.toLowerCase().includes('paystack'))) {
-          f.setAttribute('allow', 'clipboard-read; clipboard-write');
-        }
-      });
-    });
-  });
-});
-_clipObs.observe(document.body, { childList: true, subtree: true });
 
 // ── Modal controls ──
 const payOverlay    = document.getElementById('payOverlay');
