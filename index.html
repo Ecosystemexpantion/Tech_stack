@@ -700,6 +700,12 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 // ── PAYSTACK POPUP + EMAILJS CHECKOUT ──
 emailjs.init('P6vjGqbInRNLni8GS');
 
+// Capture affiliate tag from URL and persist it across the payment flow
+(function(){
+  var af = new URLSearchParams(window.location.search).get('af');
+  if(af) localStorage.setItem('eem26_af', af);
+})();
+
 // ── Modal controls ──
 const payOverlay    = document.getElementById('payOverlay');
 const buyerEmailEl  = document.getElementById('buyerEmail');
@@ -750,13 +756,45 @@ payNowBtn.addEventListener('click', function() {
     },
     callback: function(response) {
       payOverlay.classList.remove('open');
-      emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
-        to_email:     email,
-        user_email:   email,
-        product_name: 'EEM26 Tech Stack',
-        product_link: 'https://ecosystemexpantion.github.io/Product_page/',
-        payment_ref:  response.reference
-      }).finally(function() {
+      var af = localStorage.getItem('eem26_af') || '';
+      var ref = response.reference;
+
+      var sends = [
+        // 1. Buyer — access link
+        emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+          to_email:     email,
+          user_email:   email,
+          product_name: 'EEM26 Tech Stack',
+          product_link: 'https://ecosystemexpantion.github.io/Product_page/',
+          payment_ref:  ref
+        }),
+        // 2. Owner — always notified of every sale
+        emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+          to_email:     'excel8109@gmail.com',
+          user_email:   'excel8109@gmail.com',
+          product_name: af ? ('New sale via affiliate: ' + af) : 'New direct sale — EEM26 Tech Stack',
+          product_link: 'Buyer: ' + email,
+          payment_ref:  ref
+        })
+      ];
+
+      // 3. Affiliate — notified only when their link was used
+      if(af) {
+        var affiliateEmails = { 'ogujiexcellent': 'ogujiexcellent@gmail.com' };
+        var afEmail = affiliateEmails[af] || '';
+        if(afEmail) {
+          sends.push(emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+            to_email:     afEmail,
+            user_email:   afEmail,
+            product_name: '🎉 You made a referral sale! — EEM26 Tech Stack',
+            product_link: 'Someone bought through your link. Payment ref: ' + ref,
+            payment_ref:  ref
+          }));
+        }
+      }
+
+      Promise.allSettled(sends).then(function() {
+        localStorage.removeItem('eem26_af');
         window.location.href = 'https://ecosystemexpantion.github.io/Product_page/';
       });
     },
