@@ -1,0 +1,10 @@
+{
+  "name": "eem26-paystack-webhook",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Serverless Paystack webhook that sends buyer, owner, and affiliate sale emails.",
+  "dependencies": {
+    "@emailjs/nodejs": "^4.0.0"
+  }
+}

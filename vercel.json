@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/paystack-webhook.js": {
+      "maxDuration": 15
+    }
+  }
+}
