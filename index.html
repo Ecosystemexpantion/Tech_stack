@@ -756,47 +756,58 @@ payNowBtn.addEventListener('click', function() {
     },
     callback: function(response) {
       payOverlay.classList.remove('open');
-      var af = localStorage.getItem('eem26_af') || '';
+      // Normalize so a stray space or capital letter can't break the lookup
+      var af = (localStorage.getItem('eem26_af') || '').trim().toLowerCase();
       var ref = response.reference;
 
-      var sends = [
+      var affiliateEmails = { 'ogujiexcellent': 'ogujiexcellent@gmail.com' };
+      var afEmail = af ? (affiliateEmails[af] || '') : '';
+
+      // Build the list of emails to send
+      var payloads = [
         // 1. Buyer — access link
-        emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+        {
           to_email:     email,
           user_email:   email,
           product_name: 'EEM26 Tech Stack',
           product_link: 'https://ecosystemexpantion.github.io/Product_page/',
           payment_ref:  ref
-        }),
+        },
         // 2. Owner — always notified of every sale
-        emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
+        {
           to_email:     'excel8109@gmail.com',
           user_email:   'excel8109@gmail.com',
-          product_name: af ? ('New sale via affiliate: ' + af) : 'New direct sale — EEM26 Tech Stack',
+          product_name: afEmail ? ('New sale via affiliate: ' + af) : 'New direct sale — EEM26 Tech Stack',
           product_link: 'Buyer: ' + email,
           payment_ref:  ref
-        })
+        }
       ];
 
-      // 3. Affiliate — notified only when their link was used
-      if(af) {
-        var affiliateEmails = { 'ogujiexcellent': 'ogujiexcellent@gmail.com' };
-        var afEmail = affiliateEmails[af] || '';
-        if(afEmail) {
-          sends.push(emailjs.send('service_ab7fo9g', 'template_fnqmdxw', {
-            to_email:     afEmail,
-            user_email:   afEmail,
-            product_name: '🎉 You made a referral sale! — EEM26 Tech Stack',
-            product_link: 'Someone bought through your link. Payment ref: ' + ref,
-            payment_ref:  ref
-          }));
-        }
+      // 3. Affiliate — notified only when a known affiliate link was used
+      if(afEmail) {
+        payloads.push({
+          to_email:     afEmail,
+          user_email:   afEmail,
+          product_name: '🎉 You made a referral sale! — EEM26 Tech Stack',
+          product_link: 'Someone bought through your link. Payment ref: ' + ref,
+          payment_ref:  ref
+        });
       }
 
-      Promise.allSettled(sends).then(function() {
-        localStorage.removeItem('eem26_af');
-        window.location.href = 'https://ecosystemexpantion.github.io/Product_page/';
-      });
+      // Send SEQUENTIALLY (one after another). Firing them all at once trips
+      // EmailJS's rate limit and silently drops the later sends.
+      function sendNext(i) {
+        if(i >= payloads.length) {
+          localStorage.removeItem('eem26_af');
+          window.location.href = 'https://ecosystemexpantion.github.io/Product_page/';
+          return;
+        }
+        emailjs.send('service_ab7fo9g', 'template_fnqmdxw', payloads[i])
+          .then(function(){ console.log('Email sent to', payloads[i].to_email); })
+          .catch(function(err){ console.error('Email FAILED to', payloads[i].to_email, err); })
+          .then(function(){ setTimeout(function(){ sendNext(i + 1); }, 600); });
+      }
+      sendNext(0);
     },
     onClose: function() {
       payNowBtn.disabled = false;
